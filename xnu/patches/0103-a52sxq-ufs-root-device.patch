@@ -1,4 +1,4 @@
-diff --git a/bsd/conf/files b/bsd/conf/files
+﻿diff --git a/bsd/conf/files b/bsd/conf/files
 --- a/bsd/conf/files
 +++ b/bsd/conf/files
 @@ -104,6 +104,7 @@

@@ -1,4 +1,4 @@
-diff --git a/pexpert/arm/pe_serial.c b/pexpert/arm/pe_serial.c
+﻿diff --git a/pexpert/arm/pe_serial.c b/pexpert/arm/pe_serial.c
 index 997a4ab..db26bbe 100644
 --- a/pexpert/arm/pe_serial.c
 +++ b/pexpert/arm/pe_serial.c

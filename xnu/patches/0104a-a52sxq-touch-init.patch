@@ -1,4 +1,4 @@
-diff --git a/bsd/dev/unix_startup.c b/bsd/dev/unix_startup.c
+﻿diff --git a/bsd/dev/unix_startup.c b/bsd/dev/unix_startup.c
 --- a/bsd/dev/unix_startup.c
 +++ b/bsd/dev/unix_startup.c
 @@ -15,6 +15,7 @@ extern void sweet_sample_start(void);
