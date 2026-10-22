@@ -5,9 +5,9 @@ diff --git a/bsd/dev/unix_startup.c b/bsd/dev/unix_startup.c
  extern void sweet_keys_init(void);
  extern void sweet_touch_init(void);
 +extern void a52sxq_touch_init(void);
- 
+
  #define REG_CAP         0x00
- 
+
 @@ -27,6 +28,10 @@ bsd_init(void)
  	/* Input drivers (HID services in iokit/Kernel/arm/hid/SweetHID.cpp). */
  	sweet_keys_init();
@@ -16,6 +16,6 @@ diff --git a/bsd/dev/unix_startup.c b/bsd/dev/unix_startup.c
 +	/* A52SXQ STM touch driver initialization */
 +	a52sxq_touch_init();
 +#endif
- 
+
  	return 0;
  }

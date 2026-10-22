@@ -2,13 +2,13 @@ diff --git a/bsd/conf/files b/bsd/conf/files
 --- a/bsd/conf/files
 +++ b/bsd/conf/files
 @@ -105,6 +105,7 @@
- 
+
  bsd/dev/memdev.c			standard
  bsd/dev/a52sxq_ufs.c			standard
 +bsd/dev/a52sxq_touch.c			standard
  bsd/dev/mem.c				standard
  bsd/dev/munge.c 			optional config_requires_u32_munging
- 
+
 diff --git a/bsd/dev/a52sxq_touch.c b/bsd/dev/a52sxq_touch.c
 new file mode 100644
 --- /dev/null
@@ -328,7 +328,7 @@ new file mode 100644
 +	 *   [0]: Status byte (bit 7=have data, bit 6=touch timeout, etc.)
 +	 *   [1]: Number of touches (0-5, or with_ID bit encoding)
 +	 *   [2-9]: First 4 fingers' data (2 bytes each) if present
-+	 *   
++	 *
 +	 * If more than 4 fingers or variable format, larger reads may be needed.
 +	 * For 5 fingers total, this driver may need a different protocol.
 +	 * This is a minimal single-read implementation.
@@ -336,23 +336,23 @@ new file mode 100644
 +	uint8_t buf[10];
 +	int x[TOUCH_MAX] = {0}, y[TOUCH_MAX] = {0};
 +	uint32_t mask = 0;
-+	
++
 +	int err = touch_read(STM_ADDR, STM_XY_DATA, buf, sizeof(buf));
 +	if (err) {
 +		return err;
 +	}
-+	
++
 +	uint8_t status = buf[0];
 +	if (!(status & 0x80u)) {
 +		/* No data ready; retain current contacts */
 +		return 0;
 +	}
-+	
++
 +	uint8_t ntouch = buf[1] & 0x0fu;	/* Low nibble: count */
 +	if (ntouch > STM_MAX_TOUCH) {
 +		return EIO;	/* Invalid count */
 +	}
-+	
++
 +	/*
 +	 * Parse touch points. STM format per finger (2 bytes each after header):
 +	 * Each finger: [0] = ID in upper nibble, event type in lower nibble
@@ -365,21 +365,21 @@ new file mode 100644
 +		if (2 + (i + 1) * 2u > sizeof(buf)) {
 +			break;	/* Not enough data in the read buffer */
 +		}
-+		
++
 +		/* Parse X, Y coordinates (this assumes LE 16-bit pairs after the header) */
 +		uint16_t px = p[0] | ((uint16_t)p[1] << 8);
 +		uint16_t py = p[2] | ((uint16_t)p[3] << 8);
-+		
++
 +		unsigned id = i;	/* Use index as finger ID for now */
 +		if (id >= TOUCH_MAX || px > STM_MAX_X || py > STM_MAX_Y || (mask & (1u << id))) {
 +			return EIO;	/* Invalid or duplicate */
 +		}
-+		
++
 +		mask |= 1u << id;
 +		x[id] = (int)px;
 +		y[id] = (int)py;
 +	}
-+	
++
 +	touch_report(mask, x, y);
 +	return 0;
 +}
@@ -389,9 +389,9 @@ new file mode 100644
 +{
 +	(void)arg;
 +	(void)w;
-+	
++
 +	printf("A52SXQ TOUCH: thread start\n");
-+	
++
 +	/* Map SE registers */
 +	st.se = ml_io_map(TOUCH_SE_PA, 0x20000);
 +	if (!st.se) {
@@ -399,7 +399,7 @@ new file mode 100644
 +		thread_terminate(current_thread());
 +		return;
 +	}
-+	
++
 +	/* Map GCC for clock control */
 +	st.gcc = ml_io_map(TOUCH_GCC_PA, 0x200000);
 +	if (!st.gcc) {
@@ -407,7 +407,7 @@ new file mode 100644
 +		thread_terminate(current_thread());
 +		return;
 +	}
-+	
++
 +	/* Map GPIO for reset line control (if needed) */
 +	st.gpio = ml_io_map(TOUCH_NORTH_PA, 0x500000);
 +	if (!st.gpio) {
@@ -415,14 +415,14 @@ new file mode 100644
 +		thread_terminate(current_thread());
 +		return;
 +	}
-+	
++
 +	/* Enable clocks */
 +	if (!touch_clocks()) {
 +		printf("A52SXQ TOUCH: clock setup failed\n");
 +		thread_terminate(current_thread());
 +		return;
 +	}
-+	
++
 +	/* Probe for STM at 0x49 */
 +	uint8_t probe[1];
 +	int err = touch_msg(STM_ADDR, NULL, 0, probe, 1, false);
@@ -431,10 +431,10 @@ new file mode 100644
 +		thread_terminate(current_thread());
 +		return;
 +	}
-+	
++
 +	printf("A52SXQ TOUCH: STM found at 0x%02x\n", STM_ADDR);
 +	st.started = true;
-+	
++
 +	/* Main polling loop */
 +	for (unsigned cycle = 0; st.started && !st.dead; ++cycle) {
 +		int err = touch_stm();
@@ -443,7 +443,7 @@ new file mode 100644
 +		}
 +		touch_wait(16);	/* ~60 Hz polling (16 ms) */
 +	}
-+	
++
 +	printf("A52SXQ TOUCH: thread exit\n");
 +	thread_terminate(current_thread());
 +}
@@ -452,14 +452,14 @@ new file mode 100644
 +a52sxq_touch_init(void)
 +{
 +	printf("A52SXQ TOUCH: initializing\n");
-+	
++
 +	thread_t touch_thread_handle = NULL;
 +	kern_return_t kr = kernel_thread_start(touch_thread, NULL, &touch_thread_handle);
 +	if (kr != KERN_SUCCESS) {
 +		printf("A52SXQ TOUCH: thread creation failed\n");
 +		return;
 +	}
-+	
++
 +	thread_deallocate(touch_thread_handle);
 +}
 +

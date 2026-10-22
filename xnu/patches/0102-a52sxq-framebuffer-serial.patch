@@ -5,19 +5,19 @@ index 997a4ab..db26bbe 100644
 @@ -697,6 +697,154 @@ register_serial_functions(struct pe_serial_functions *fns)
  	gPESF = fns;
  }
- 
+
 +/*****************************************************************************/
 +
 +/*
 + * a52sxq: framebuffer "serial" for early console (Samsung Galaxy A52s 5G with
 + * MDSS/DSI display). kprintf output is drawn onto the boot framebuffer at
 + * physical address 0x9c000000 (left by Samsung ABL bootloader).
-+ * 
++ *
 + * Configuration from ADT node "a52sxq-fbcon":
 + *   reg    = <0x9c000000, 0x1800000>  (24 MB framebuffer)
 + *   width, height              1080 x 2400 pixels
 + *   stride                     4320 bytes per line (1080 * 4, RGBA8888)
-+ * 
++ *
 + * Lines wrap back to the top instead of scrolling; the line after the cursor
 + * is kept blank so the newest output is easy to find.
 + * (Identical framebuffer layout to sweet SM7150, same bootloader convention.)
@@ -120,7 +120,7 @@ index 997a4ab..db26bbe 100644
 +};
 +
 +/*****************************************************************************/
- 
+
  void
  pe_init_serial(void)
 diff --git a/pexpert/arm/pe_platform.c b/pexpert/arm/pe_platform.c
@@ -129,7 +129,7 @@ index 1a2b3c4..9d8a1c4 100644
 +++ b/pexpert/arm/pe_platform.c
 @@ -110,6 +110,46 @@ extern void cons_putc(char c);
  extern void cons_getc(void);
- 
+
  #endif /* __APPLE_ARM64_ARCH_FAMILY__ */
 +
 +#ifdef A52SXQ
@@ -144,7 +144,7 @@ index 1a2b3c4..9d8a1c4 100644
 +{
 +	DTEntry node;
 +	int err;
-+	
++
 +	fbcon_base = NULL;
 +	fbcon_width = 1080;
 +	fbcon_height = 2400;
@@ -171,7 +171,7 @@ index 1a2b3c4..9d8a1c4 100644
 +}
 +
 +#endif /* A52SXQ */
- 
+
  void
  pe_platform_init_serial()
 @@ -132,6 +172,9 @@ pe_platform_init_serial()

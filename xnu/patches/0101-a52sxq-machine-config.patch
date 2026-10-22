@@ -10,9 +10,9 @@ index 8460893..1234567 100644
  else
 -SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE
 +SUPPORTED_ARM64_MACHINE_CONFIGS = BCM2837 T6000 T8101 T8103 VMAPPLE A52SXQ SWEET
- 
+
  endif
- 
+
 @@ -56,11 +56,13 @@ MACHINE_FLAGS_ARM64_T8103 = -DARM64_BOARD_CONFIG_T8103                  -mcpu=ap
  # ARM64 machine config flags
  MACHINE_FLAGS_ARM64_T6000 = -DARM64_BOARD_CONFIG_T6000 		-mcpu=apple-a14
@@ -20,8 +20,8 @@ index 8460893..1234567 100644
  MACHINE_FLAGS_ARM64_BCM2837 = -DARM64_BOARD_CONFIG_BCM2837
 +MACHINE_FLAGS_ARM64_A52SXQ = -DARM64_BOARD_CONFIG_A52SXQ                -march=armv8.2-a+crypto
 +MACHINE_FLAGS_ARM64_SWEET = -DARM64_BOARD_CONFIG_SWEET                  -march=armv8.2-a+crypto
- 
- 
+
+
  #
  # Kernel config flags
  KERNEL_CONFIG_RELEASE = -DKERNEL_CONFIG_RELEASE -DXNU_CONFIG_RELEASE
@@ -34,7 +34,7 @@ index 0000000..1111111
 @@ -0,0 +1,97 @@
 +/*
 + * Board config for the Samsung Galaxy A52s 5G ("a52sxq", Qualcomm SM7325 /
-+ * Snapdragon 778G): Kryo 670 = 1x Prime (A78) + 3x Gold (A78) + 4x Silver (A55), 
++ * Snapdragon 778G): Kryo 670 = 1x Prime (A78) + 3x Gold (A78) + 4x Silver (A55),
 + * ARMv8.2, no PAC.
 + *
 + * Generic ARM like BCM2837 (no APPLE_ARM64_ARCH_FAMILY: none of Apple's
@@ -44,9 +44,9 @@ index 0000000..1111111
 + * including the timer, is a Group 1 IRQ taken through sleh_irq().
 + *
 + * CPU Configuration (SM7325 / Snapdragon 778G Kryo 670):
-+ * - 1× Kryo 670 Prime (Cortex-A78) @ up to 2.4 GHz
-+ * - 3× Kryo 670 Gold  (Cortex-A78) @ up to 2.4 GHz
-+ * - 4× Kryo 670 Silver (Cortex-A55) @ up to 1.9 GHz
++ * - 1Ã— Kryo 670 Prime (Cortex-A78) @ up to 2.4 GHz
++ * - 3Ã— Kryo 670 Gold  (Cortex-A78) @ up to 2.4 GHz
++ * - 4Ã— Kryo 670 Silver (Cortex-A55) @ up to 1.9 GHz
 + * Total = 8 cores
 + */
 +
@@ -114,7 +114,7 @@ index 0000000..1111111
 +/* End of GICv3 register definitions */
 +
 +#endif /* ! _PEXPERT_ARM64_A52SXQ_H */
- 
+
  /* I-Cache. */
 diff --git a/osfmk/arm64/sleh.c b/osfmk/arm64/sleh.c
 index c40c6ea..abcdef1 100644
@@ -130,8 +130,8 @@ index c40c6ea..abcdef1 100644
  #include <arm64/machine_machdep.h>
 @@ -1855,6 +1856,42 @@ sleh_irq(arm_saved_state_t *state)
  #endif
- 
- 
+
+
 +#if defined(A52SXQ)
 +	/*
 +	 * a52sxq: TrustZone owns GIC Group 0, so the timer and IPIs that other
@@ -170,16 +170,16 @@ index c40c6ea..abcdef1 100644
 +	__builtin_arm_isb(ISB_SY);
 +#else
  	sleh_interrupt_handler_prologue(state, DBG_INTR_TYPE_OTHER);
- 
+
  #if USE_APPLEARMSMP
 @@ -1866,6 +1903,7 @@ sleh_irq(arm_saved_state_t *state)
  	    cdp->interrupt_nub,
  	    cdp->interrupt_source);
  #endif
 +#endif /* A52SXQ */
- 
+
  	entropy_collect();
- 
+
 diff --git a/osfmk/arm64/start.s b/osfmk/arm64/start.s
 index e5336e5..f8d0d2e 100644
 --- a/osfmk/arm64/start.s
@@ -187,7 +187,7 @@ index e5336e5..f8d0d2e 100644
 @@ -745,11 +745,11 @@ common_start:
  	MSR_SCTLR_EL1_X0
  	isb		sy
- 
+
 -#if !VMAPPLE
 +#if !VMAPPLE && !defined(A52SXQ)
  	MOV64   x1, SCTLR_EL1_DEFAULT
@@ -195,7 +195,7 @@ index e5336e5..f8d0d2e 100644
  	bne		.
 -#endif /* !VMAPPLE */
 +#endif /* !VMAPPLE && !A52SXQ */
- 
+
  #if (!CONFIG_KERNEL_INTEGRITY || (CONFIG_KERNEL_INTEGRITY && !defined(KERNEL_INTEGRITY_WT)))
  	/* Watchtower
 diff --git a/pexpert/arm/pe_fiq.c b/pexpert/arm/pe_fiq.c
@@ -205,7 +205,7 @@ index 3ad743f..4ec6989 100644
 @@ -141,11 +141,25 @@ pe_init_fiq()
  		}
  	}
- 
+
 +#if defined(A52SXQ)
 +	/*
 +	 * Real hardware with two security states: Group 0 is TrustZone's and
@@ -222,17 +222,17 @@ index 3ad743f..4ec6989 100644
 +#else
  	// Configure timers and legacy FIQ to be group 0
  	gicr_write32(GICR_IGROUPR0, 0x81FFFFFF);
- 
+
  	// Enable PPI 27
  	gicr_write32(GICR_ISENABLER0, (1 << 27));
 +#endif /* A52SXQ */
- 
+
  	// Enable system register access
  	uint64_t icc_sre = __builtin_arm_rsr64("ICC_SRE_EL1");
 @@ -153,8 +167,12 @@ pe_init_fiq()
  	__builtin_arm_wsr64("ICC_SRE_EL1", icc_sre);
  	__builtin_arm_isb(ISB_SY);
- 
+
 +#if defined(A52SXQ)
 +	__builtin_arm_wsr64("ICC_BPR1_EL1", 0);
 +#else
@@ -240,12 +240,12 @@ index 3ad743f..4ec6989 100644
  	__builtin_arm_wsr64("ICC_BPR0_EL1", 0);
 +#endif /* A52SXQ */
  	__builtin_arm_wsr64("ICC_PMR_EL1", 0xFF);
- 
+
  	// Set EOI mode of this processor
 @@ -162,12 +180,24 @@ pe_init_fiq()
  	icc_ctlr &= ~ICC_CTLR_EOIMODE;
  	__builtin_arm_wsr64("ICC_CTLR_EL1", icc_ctlr);
- 
+
 +#if defined(A52SXQ)
 +	// ABL leaves only ARE_NS set; configure GIC for group 1
 +	uint32_t gicd_ctlr = gicd_read32(GICD_CTLR);
@@ -278,8 +278,8 @@ index 8226b8c..c7d274f 100644
 -	BCM2837.h
 +	BCM2837.h \
 +	A52SXQ.h
- 
- 
+
+
  # Headers installed into System.framework/PrivateHeaders (userspace internal SDK only).
 diff --git a/pexpert/pexpert/arm64/A52SXQ.h b/pexpert/pexpert/arm64/A52SXQ.h
 new file mode 100644
@@ -370,7 +370,7 @@ index 9454534..88e524a 100644
 @@ -97,6 +97,17 @@ ifeq ($(ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG),)
  #define CORE_NCTRS                     8 /* Placeholder; KPC is not enabled for this target */
  #endif  /* ARM64_BOARD_CONFIG_BCM2837 */
- 
+
 +#ifdef ARM64_BOARD_CONFIG_A52SXQ
 +#include <pexpert/arm64/A52SXQ.h>
 +
@@ -384,4 +384,4 @@ index 9454534..88e524a 100644
 +
  #ifdef ARM64_BOARD_CONFIG_VMAPPLE
  #include <pexpert/arm64/VMAPPLE.h>
- 
+

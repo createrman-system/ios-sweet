@@ -8,7 +8,7 @@ diff --git a/bsd/conf/files b/bsd/conf/files
 +bsd/dev/a52sxq_pmic.c			standard
  bsd/dev/mem.c				standard
  bsd/dev/munge.c 			optional config_requires_u32_munging
- 
+
 diff --git a/bsd/dev/a52sxq_pmic.c b/bsd/dev/a52sxq_pmic.c
 new file mode 100644
 --- /dev/null
@@ -17,7 +17,7 @@ new file mode 100644
 +/*
 + * A52SXQ PMIC buttons and power rail management via SPMI arbiter.
 + * Call once after the scheduler is running; all work runs on one thread.
-+ * 
++ *
 + * PMIC stack (verified from live FDT):
 + *   PMK8350 (SID 0): master, PON control
 + *   PM7325 (SID 1): main power rails
@@ -26,7 +26,7 @@ new file mode 100644
 + *
 + * Buttons: power (PON KEY KPDPWR), volume-up (GPIO on PM7325).
 + * Rails: L22A for touch (enable/disable polling).
-+ * 
++ *
 + * PMIC access is READ ONLY via SPMI observer: the sole MMIO write issues
 + * EXT_READL on an observer channel. No PMIC config, IRQ acknowledge or
 + * reset writes exist. Power control only via bootloader environment.
@@ -197,7 +197,7 @@ new file mode 100644
 +/*
 + * Enable a PMIC LDO or SMPS regulator via RPMh interface.
 + * Called by other drivers (e.g., touch driver) to control power rails.
-+ * 
++ *
 + * Returns 0 on success, errno on failure. Called from thread context,
 + * not atomic. Bootloader has left regulators in ABL state; this is
 + * a no-op if the rail is already on at the desired voltage.

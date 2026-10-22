@@ -4,7 +4,7 @@ diff --git a/iokit/Kernel/arm/hid/SweetHID.cpp b/iokit/Kernel/arm/hid/SweetHID.c
 @@ -20616,6 +20616,30 @@ sweet_hid_touch(int finger, int down, int x, int y)
  	}
  }
- 
+
 +/*
 + * A52SXQ touch driver entry point (same interface as sweet_hid_touch).
 + * Called by bsd/dev/a52sxq_touch.c to report touch events as HID digitizer.

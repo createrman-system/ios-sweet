@@ -4,7 +4,7 @@ diff --git a/iokit/Kernel/arm/hid/SweetHID.cpp b/iokit/Kernel/arm/hid/SweetHID.c
 @@ -20641,6 +20641,36 @@ sweet_hid_key(int key, int down)
  	}
  }
- 
+
 +/*
 + * A52SXQ button driver entry point (same interface as sweet_hid_key).
 + * Called by bsd/dev/a52sxq_pmic.c to report button events as HID key presses.

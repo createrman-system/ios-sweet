@@ -3,19 +3,19 @@ diff --git a/bsd/conf/files b/bsd/conf/files
 +++ b/bsd/conf/files
 @@ -104,6 +104,7 @@
  bsd/dev/random/randomdev.c		standard
- 
+
  bsd/dev/memdev.c			standard
 +bsd/dev/a52sxq_ufs.c			standard
  bsd/dev/mem.c				standard
  bsd/dev/munge.c 			optional config_requires_u32_munging
- 
+
 diff --git a/iokit/bsddev/IOKitBSDInit.cpp b/iokit/bsddev/IOKitBSDInit.cpp
 --- a/iokit/bsddev/IOKitBSDInit.cpp
 +++ b/iokit/bsddev/IOKitBSDInit.cpp
 @@ -766,6 +766,24 @@
  		}
  	}
- 
+
 +#if defined(ARM64_BOARD_CONFIG_A52SXQ)
 +//
 +//	A52SXQ: root on a GPT partition of the internal UFS (bsd/dev/a52sxq_ufs.c)
