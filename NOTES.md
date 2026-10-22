@@ -2,6 +2,35 @@
 
 ---
 
+## A52SXQ GITHUB ACTIONS BUILD - WORKFLOW READY ✅
+
+**STATUS (2026-10-22 evening):** GitHub Actions workflow updated for A52SXQ kernel builds.
+
+### Workflow Changes
+- Updated `.github/workflows/xnu.yml` to accept `machine_config=A52SXQ`
+- All 9 a52sxq patches (0101–0105b) apply in correct alphabetical order
+- Kernel outputs tagged as `kernel.development.A52SXQ` for tracking
+- Default config remains SWEET (backward compatible)
+
+### Next: Trigger First A52SXQ Build
+```powershell
+# Commit and push workflow
+git add .github/workflows/xnu.yml
+git commit -m "workflow: add A52SXQ support to xnu build (keep SWEET default)"
+git push origin main
+
+# Trigger build
+gh workflow run xnu.yml -R <YOUR_USERNAME>/ios-sweet --ref main -f machine_config=A52SXQ -f kernel_config=DEVELOPMENT
+
+# Download (after ~10 minutes)
+$RUN_ID = (gh run list -R <YOUR_USERNAME>/ios-sweet -L 1 --json databaseId -q)
+gh run download $RUN_ID -R <YOUR_USERNAME>/ios-sweet -n xnu-kernel -D xnu/out-a52sxq
+```
+
+Result: `xnu/out-a52sxq/kernel.development.A52SXQ` ready for ADT generation and boot image building.
+
+---
+
 ## SAMSUNG GALAXY A52S (a52sxq / SM7325) - HARDWARE PHASE 0 COMPLETE ✅
 
 **STATUS (2026-10-22):** Hardware extraction COMPLETE from live device tree.

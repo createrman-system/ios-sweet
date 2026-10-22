@@ -10,7 +10,7 @@ on:
         description: RELEASE / DEVELOPMENT / DEBUG
         default: DEVELOPMENT
       machine_config:
-        description: xnu MACHINE_CONFIG
+        description: xnu MACHINE_CONFIG (SWEET or A52SXQ)
         default: SWEET
       keep_going:
         description: make -k (collect all compile errors in one run)
@@ -115,6 +115,16 @@ jobs:
           cp -R dxb/fakeroot/System/Library/Kernels/. out/ 2>/dev/null || true
           ls -la out
           (cd out && shasum -a 256 kernel.* > SHA256SUMS) || true
+          # For tracking: add machine config to output filename for multi-config builds
+          if [ -f out/kernel.development ]; then
+            cp out/kernel.development out/kernel.development.${{ env.MACHINE_CONFIG }}
+          fi
+          if [ -f out/kernel.release ]; then
+            cp out/kernel.release out/kernel.release.${{ env.MACHINE_CONFIG }}
+          fi
+          if [ -f out/kernel.unstripped ]; then
+            cp out/kernel.unstripped out/kernel.unstripped.${{ env.MACHINE_CONFIG }}
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()
