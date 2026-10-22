@@ -1,0 +1,110 @@
+
+========== dtb-00.dtb ==========
+
+Found 36 nodes with reg properties
+
+Hardware-related nodes: 10
+
+[/fragment@0/__overlay__/qcom,pmk8350@0]
+  0x0 (size: 0x0) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/pon_hlos@1300]
+  0x1300 (size: 0x800) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/sdam@7100/restart@48]
+  0x48 (size: 0x1) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/sdam@7200/pon_reason@69]
+  0x69 (size: 0x1) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/rtc@6100]
+  0x6100 (size: 0x6200) [32-bit]
+
+[/fragment@1/__overlay__/qcom,pm7325@1]
+  0x1 (size: 0x0) [32-bit]
+
+[/fragment@3/__overlay__/qcom,pm8350c@2]
+  0x2 (size: 0x0) [32-bit]
+
+[/fragment@3/__overlay__/qcom,pm8350c@2/bcl@4700]
+  0x4700 (size: 0x100) [32-bit]
+
+[/fragment@5/__overlay__/qcom,pmr735a@4]
+  0x4 (size: 0x0) [32-bit]
+
+[/fragment@82/__overlay__/qcom,qup_hsuart@994000]
+  0x994000 (size: 0x4000) [32-bit]
+
+
+========== dtb-01.dtb ==========
+
+Found 36 nodes with reg properties
+
+Hardware-related nodes: 10
+
+[/fragment@0/__overlay__/qcom,pmk8350@0]
+  0x0 (size: 0x0) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/pon_hlos@1300]
+  0x1300 (size: 0x800) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/sdam@7100/restart@48]
+  0x48 (size: 0x1) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/sdam@7200/pon_reason@69]
+  0x69 (size: 0x1) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/rtc@6100]
+  0x6100 (size: 0x6200) [32-bit]
+
+[/fragment@1/__overlay__/qcom,pm7325@1]
+  0x1 (size: 0x0) [32-bit]
+
+[/fragment@3/__overlay__/qcom,pm8350c@2]
+  0x2 (size: 0x0) [32-bit]
+
+[/fragment@3/__overlay__/qcom,pm8350c@2/bcl@4700]
+  0x4700 (size: 0x100) [32-bit]
+
+[/fragment@5/__overlay__/qcom,pmr735a@4]
+  0x4 (size: 0x0) [32-bit]
+
+[/fragment@81/__overlay__/qcom,qup_hsuart@994000]
+  0x994000 (size: 0x4000) [32-bit]
+
+
+========== dtb-02.dtb ==========
+
+Found 36 nodes with reg properties
+
+Hardware-related nodes: 10
+
+[/fragment@0/__overlay__/qcom,pmk8350@0]
+  0x0 (size: 0x0) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/pon_hlos@1300]
+  0x1300 (size: 0x800) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/sdam@7100/restart@48]
+  0x48 (size: 0x1) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/sdam@7200/pon_reason@69]
+  0x69 (size: 0x1) [32-bit]
+
+[/fragment@0/__overlay__/qcom,pmk8350@0/rtc@6100]
+  0x6100 (size: 0x6200) [32-bit]
+
+[/fragment@1/__overlay__/qcom,pm7325@1]
+  0x1 (size: 0x0) [32-bit]
+
+[/fragment@3/__overlay__/qcom,pm8350c@2]
+  0x2 (size: 0x0) [32-bit]
+
+[/fragment@3/__overlay__/qcom,pm8350c@2/bcl@4700]
+  0x4700 (size: 0x100) [32-bit]
+
+[/fragment@5/__overlay__/qcom,pmr735a@4]
+  0x4 (size: 0x0) [32-bit]
+
+[/fragment@81/__overlay__/qcom,qup_hsuart@994000]
+  0x994000 (size: 0x4000) [32-bit]

@@ -1,0 +1,186 @@
+diff --git a/pexpert/arm/pe_serial.c b/pexpert/arm/pe_serial.c
+index 997a4ab..db26bbe 100644
+--- a/pexpert/arm/pe_serial.c
++++ b/pexpert/arm/pe_serial.c
+@@ -697,6 +697,154 @@ register_serial_functions(struct pe_serial_functions *fns)
+ 	gPESF = fns;
+ }
+ 
++/*****************************************************************************/
++
++/*
++ * a52sxq: framebuffer "serial" for early console (Samsung Galaxy A52s 5G with
++ * MDSS/DSI display). kprintf output is drawn onto the boot framebuffer at
++ * physical address 0x9c000000 (left by Samsung ABL bootloader).
++ * 
++ * Configuration from ADT node "a52sxq-fbcon":
++ *   reg    = <0x9c000000, 0x1800000>  (24 MB framebuffer)
++ *   width, height              1080 x 2400 pixels
++ *   stride                     4320 bytes per line (1080 * 4, RGBA8888)
++ * 
++ * Lines wrap back to the top instead of scrolling; the line after the cursor
++ * is kept blank so the newest output is easy to find.
++ * (Identical framebuffer layout to sweet SM7150, same bootloader convention.)
++ */
++
++extern unsigned char iso_font[256 * 16];
++
++#define FBCON_SCALE     2
++#define FBCON_FG        0xffffffffu
++#define FBCON_BG        0xff000000u
++
++static volatile uint32_t *fbcon_base;
++static uint32_t fbcon_width, fbcon_height, fbcon_stride;
++static uint32_t fbcon_cols, fbcon_rows, fbcon_col, fbcon_row;
++
++static void
++fbcon_clear_row(uint32_t row)
++{
++	for (uint32_t y = row * 16 * FBCON_SCALE; y < (row + 1) * 16 * FBCON_SCALE; y++) {
++		volatile uint32_t *line = fbcon_base + y * (fbcon_stride / 4);
++		for (uint32_t x = 0; x < fbcon_width; x++) {
++			line[x] = FBCON_BG;
++		}
++	}
++}
++
++static void
++fbcon_newline(void)
++{
++	fbcon_col = 0;
++	fbcon_row = (fbcon_row + 1) % fbcon_rows;
++	fbcon_clear_row(fbcon_row);
++	fbcon_clear_row((fbcon_row + 1) % fbcon_rows);
++}
++
++static void
++fbcon_init(void)
++{
++	fbcon_cols = fbcon_width / (8 * FBCON_SCALE);
++	fbcon_rows = fbcon_height / (16 * FBCON_SCALE);
++	fbcon_col = fbcon_row = 0;
++	for (uint32_t r = 0; r < fbcon_rows; r++) {
++		fbcon_clear_row(r);
++	}
++}
++
++static unsigned int
++fbcon_transmit_ready(void)
++{
++	return 1;
++}
++
++static void
++fbcon_transmit_data(uint8_t c)
++{
++	if (c == '\r') {
++		fbcon_col = 0;
++		return;
++	}
++	if (c == '\n') {
++		fbcon_newline();
++		return;
++	}
++	if (fbcon_col >= fbcon_cols) {
++		fbcon_newline();
++	}
++	const unsigned char *glyph = iso_font + c * 16;
++	uint32_t x0 = fbcon_col * 8 * FBCON_SCALE, y0 = fbcon_row * 16 * FBCON_SCALE;
++	for (uint32_t gy = 0; gy < 16; gy++) {
++		for (uint32_t sy = 0; sy < FBCON_SCALE; sy++) {
++			volatile uint32_t *line = fbcon_base + (y0 + gy * FBCON_SCALE + sy) * (fbcon_stride / 4) + x0;
++			for (uint32_t gx = 0; gx < 8; gx++) {
++				uint32_t px = (glyph[gy] & (1u << gx)) ? FBCON_FG : FBCON_BG;
++				for (uint32_t sx = 0; sx < FBCON_SCALE; sx++) {
++					line[gx * FBCON_SCALE + sx] = px;
++				}
++			}
++		}
++	}
++	fbcon_col++;
++}
++
++static unsigned int
++fbcon_receive_ready(void)
++{
++	return 0;
++}
++
++static int
++fbcon_receive_data(void)
++{
++	return -1;
++}
++
++static struct pe_serial_functions fbcon_functions = {
++	.transmit_ready = fbcon_transmit_ready,
++	.transmit_data = fbcon_transmit_data,
++	.receive_ready = fbcon_receive_ready,
++	.receive_data = fbcon_receive_data,
++};
++
++/*****************************************************************************/
+ 
+ void
+ pe_init_serial(void)
+diff --git a/pexpert/arm/pe_platform.c b/pexpert/arm/pe_platform.c
+index 1a2b3c4..9d8a1c4 100644
+--- a/pexpert/arm/pe_platform.c
++++ b/pexpert/arm/pe_platform.c
+@@ -110,6 +110,46 @@ extern void cons_putc(char c);
+ extern void cons_getc(void);
+ 
+ #endif /* __APPLE_ARM64_ARCH_FAMILY__ */
++
++#ifdef A52SXQ
++
++extern void
++fbcon_init(void);
++
++extern struct pe_serial_functions fbcon_functions;
++
++static void
++pe_a52sxq_init_serial(void)
++{
++	DTEntry node;
++	int err;
++	
++	fbcon_base = NULL;
++	fbcon_width = 1080;
++	fbcon_height = 2400;
++	fbcon_stride = 4320;
++
++	/* Extract framebuffer parameters from ADT if available */
++	err = DTLookupEntry(NULL, "/a52sxq-fbcon", &node);
++	if (err == kSuccess) {
++		void *reg_prop;
++		unsigned int reg_len;
++		if (DTGetProperty(node, "reg", &reg_prop, &reg_len) == kSuccess && reg_len >= 4) {
++			uint32_t addr = *(uint32_t *)reg_prop;
++			fbcon_base = (volatile uint32_t *)(uintptr_t)addr;
++		}
++		DTGetProperty(node, "width", &fbcon_width, 4);
++		DTGetProperty(node, "height", &fbcon_height, 4);
++		DTGetProperty(node, "stride", &fbcon_stride, 4);
++	}
++
++	if (fbcon_base) {
++		fbcon_init();
++		register_serial_functions(&fbcon_functions);
++	}
++}
++
++#endif /* A52SXQ */
+ 
+ void
+ pe_platform_init_serial()
+@@ -132,6 +172,9 @@ pe_platform_init_serial()
+ #elif defined(VMAPPLE)
+ 	/* stub, vmapple uses a serial port that doesn't fit in pexpert */
+ #else
++#ifdef A52SXQ
++	pe_a52sxq_init_serial();
++#endif
+ 	/* stub for generic arm platform */
+ #endif
+ }

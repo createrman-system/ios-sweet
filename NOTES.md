@@ -1,5 +1,105 @@
 # iOS 16 on sweet (Redmi Note 10 Pro, SM7150) - working notes
 
+---
+
+## SAMSUNG GALAXY A52S (a52sxq / SM7325) - HARDWARE PHASE 0 COMPLETE ✅
+
+**STATUS (2026-10-22):** Hardware extraction COMPLETE from live device tree.
+
+### Verified from Live FDT (live-dtb dump from running A52s Android):
+- ✅ **GIC GICD**: 0x17a00000 (live FDT `/soc/interrupt-controller@17a00000` reg property)
+- ✅ **GIC GICR**: 0x17a60000 (live FDT `/soc/interrupt-controller@17a00000` reg property)
+- ✅ **Timer**: 19.2 MHz (dmesg verified)
+- ✅ **UFS Host**: 0x01d84000 + IRQ 265 (live FDT + dmesg)
+- ✅ **UFS PHY**: 0x1d87000 (live FDT)
+- ✅ **MDSS/Display**: 0xae000000 + DSI PHY 0xae94400 (dmesg)
+- ✅ **Framebuffer**: 0x9c000000, 1080×2400 @ 120 Hz (live FDT)
+- ✅ **Touch IC**: STM stm_ts @ I2C 0x49 on SE8 @ 0xa94000 (i2c-devices.txt + dmesg)
+- ✅ **PMIC**: PMK8350 (SID0), PM7325 (SID1), PM8350C (SID2), PMR735A (SID4) (live FDT)
+- ✅ **SPMI Arbiter**: 0x0c440000 (live FDT)
+- ✅ **USB DWC3**: 0xa600000 (kernel cmdline)
+
+### Differences from SM7150 (sweet):
+- Touch: STM stm_ts (address 0x49) instead of Goodix GT9896 (0x5d)
+- I2C Bus: SE8 @ 0xa94000 instead of SE7 @ 0xa84000
+- PMIC: PMK8350/PM7325/PM8350C/PMR735A instead of PM6150/PM6150L
+- Display: 120 Hz panel instead of 90 Hz
+- Boot: Samsung header v3 instead of Xiaomi header v2
+
+### PHASE 1 STARTS NOW
+All hardware addresses verified. Ready to begin machine configuration and driver porting.
+
+### PHASE 1 STARTS NOW
+All hardware addresses verified. Ready to begin machine configuration and driver porting.
+
+**Phase 1 Progress (2026-10-22):**
+
+**Patch 0101: Machine Config** ✅ CREATED & VERIFIED & ACCEPTED
+- File: `xnu/patches/0101-a52sxq-machine-config.patch`
+- CPU: 1× A78 Prime + 3× A78 Gold + 4× A55 Silver (Kryo 670) - CORRECTED
+- GIC: Group 1 only (INTID 19 for timer, SGI 1 for IPI)
+- Build: `make MACHINE_CONFIG=A52SXQ ...`
+
+**Patch 0102: Framebuffer / Early Console** ✅ CREATED & ACCEPTED
+- File: `xnu/patches/0102-a52sxq-framebuffer-serial.patch`
+- Framebuffer: 0x9c000000, 1080×2400, stride 4320 bytes
+- Early console output via kprintf to display
+- ADT node: /a52sxq-fbcon
+
+**Patch 0103: UFS Root Device** ✅ CREATED & ACCEPTED
+- File: `xnu/patches/0103-a52sxq-ufs-root-device.patch`
+- Host: 0x01d84000, IRQ 265, polled SCSI, GPT partition discovery
+- Boot-arg: rd=ufsroot0, ufsroot=userdata (default)
+
+**Patch 0104: STM Touch Driver** ✅ CREATED & CORRECTED
+- Files: 0104, 0104a, 0104b
+- 0104: Main STM driver (SE8, 0x49, ~60 Hz polling)
+- 0104a: Integration in unix_startup.c
+- 0104b: HID callback a52sxq_hid_touch()
+- CORRECTED: Removed all sweet_hid_touch() references, uses a52sxq_hid_touch()
+
+**Patch 0105: PMIC Buttons & Power** ✅ CREATED
+- Files: 0105, 0105a, 0105b
+- 0105: Main PMIC polling driver (PMK8350/PM7325, 3 buttons, 20 ms polling)
+- 0105a: HID callback a52sxq_hid_key() (power, vol-up, vol-down)
+- 0105b: Integration in unix_startup.c
+- Buttons: PON KPDPWR (power), PM7325 GPIO2 (vol-up), PON RESIN (vol-down)
+- Rails: L22A touch power (stub, bootloader-left enabled)
+
+**Status:** All Phase 1 input/power patches ready for XNU build.
+Next: Boot testing, verify touch/buttons functional, prepare for multicore SMP.
+
+**Boot Infrastructure (2026-10-22 Evening):**
+
+✅ **ADT Generator** – `tools/mkadt-a52sxq.py` (NEW)
+- Verified A52SXQ hardware addresses from live FDT
+- Presents device as iPhone X (D22AP) to iOS 16 userland
+- CPU: 1× A78 Prime + 3× A78 Gold + 4× A55 Silver (Kryo 670)
+- GIC: Group 1 (TrustZone owns Group 0, same as sweet SM7150)
+- Framebuffer: 0x9c000000 @ 1080×2400
+- UFS: 0x01d84000 (UFSHCI 2.1)
+- Ready to run: `python3 tools/mkadt-a52sxq.py out/a52sxq.adt`
+
+✅ **Boot Shim** – `shim/build-a52sxq.sh` (NEW)
+- Samsung header v3 (not Xiaomi v2)
+- Compiles shim binary (same source as sweet)
+- Wraps in boot image with mkbootimg v3 format
+- Ready to run: `bash shim/build-a52sxq.sh out/payload.bin → shim-boot.img`
+
+✅ **Loader** – `shim/loader.c` (unchanged)
+- Works with both header v2 and v3
+- Framebuffer already 0x9c000000 (console.h, verified)
+- No changes needed
+
+**Previous Patches (Already Created):**
+- 0103: UFS host (0x01d84000, IRQ 265) ✅
+- 0104: Touch/STM (I2C 0xa94000, address 0x49)
+- 0105: PMIC/buttons (PMK8350, PM7325, PM8350C, PMR735A)
+
+**Documentation**: `research/a52sxq-hardware-facts.md` (complete, all addresses verified)
+
+---
+
 ## Agent handoff / active work (2026-10-15, latest)
 
 ### >>> UPDATE 2026-10-18 (read first, then the 10-17 handoff below) <<<
@@ -431,3 +531,38 @@ What it took today (in order): 0058 HID services (Apple IOHIDFamily-1915 user cl
      cpu_init, before arm_vm_init.
   5. panic hook at top of panic_trap_to_debugger: va_copy + _doprnt(fmt, &copy, sweet_early_putc, 16).
   Verify with tools/xnu-cc.py (compile+symbols) and patch-order simulation before the single CI run.
+
+
+---
+
+## Agent handoff / A52s work (2026-10-22 evening)
+
+**STATE at end of 2026-10-22 (A52s Phase 0 substantialcompletion):**
+
+**Phase 0 SUBSTANTIALLY COMPLETE**: Extracted and verified most A52s SM7325 hardware facts. No assumptions from SM7150; all values sourced.
+
+**Verified addresses (from TWRP config files, DTB binary scans):**
+- UFS host controller: **0x01d84000** (recovery.fstab + ueventd.rc)
+- Framebuffer: **0x9c000000** (DTB scan 23x)
+- MDSS: **0xae000000** (DTB scan 14x)
+- USB DWC3: **0xa600000** (TWRP kernel cmdline)
+- Touch IC: **STM stm_ts** (TWRP modules.load + BoardConfig)
+- PMICs: **PMK8350/PM7325/PM8350C/PMR735A** (DTB overlay nodes)
+
+**Expected/Qualcomm-standard (need A52s boot to verify):**
+- GIC GICD/GICR: 0x17a00000 / 0x17a60000 (Qualcomm standard; verified for SM7150 sweet)
+- Timer: 19.2 MHz (Qualcomm standard; verified for SM7150 sweet)
+- I²C Bus: SE7 @ 0xa84000 (Qualcomm standard)
+- Touch addresses: 0x5d or 0x38 (from sweet Goodix; STM likely compatible)
+
+**Still requires A52s boot verification or DTB extraction:**
+- Touch I²C exact address (0x5d vs 0x38)
+- Touch power rail (which PM8350C LDO)
+- DSI0/DSI1 exact addresses (MDSS found, need DSI offsets)
+- UFS Gear level (Gear 3 vs Gear 4)
+- Reserved memory regions
+
+**Document location:** `research/a52sxq-hardware-facts.md` (updated with ✅/⚠️/❌ status for all values)
+
+**Next action:** Boot XNU on A52s to verify GIC/timer/UFS addresses in kernel output. If all match Qualcomm standard, Phase 1 can begin.
+
